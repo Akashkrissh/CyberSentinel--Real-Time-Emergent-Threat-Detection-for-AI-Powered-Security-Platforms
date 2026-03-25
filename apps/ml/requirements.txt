@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+websockets
+psycopg2-binary
+pandas
+scikit-learn
+openai
+typer
+requests

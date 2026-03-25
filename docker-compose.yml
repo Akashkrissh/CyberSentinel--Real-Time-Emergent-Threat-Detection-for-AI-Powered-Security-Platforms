@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  frontend:
+    build: ./apps/dashboard
+    container_name: sentinelai-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ml
+
+  ingest:
+    # Go API (Auth + anomalies). If you really meant the CLI, change back to ./apps/cli.
+    build: ./apps/ingest
+    container_name: sentinelai-ingest
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"   # matches your Go server (:8000)
+
+  ml:
+    build: ./apps/ml
+    container_name: sentinelai-ml
+    env_file:
+      - .env
+    depends_on:
+      - db
+    ports:
+      - "8001:8001"
+
+  db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: sentinelai-db
+    env_file:
+      - .env         # expects POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./seed_logs.sql:/docker-entrypoint-initdb.d/01_seed_logs.sql:ro
+      - ./auth_init.sql:/docker-entrypoint-initdb.d/02_auth_init.sql:ro
+
+  redis:
+    image: redis:7
+    container_name: sentinelai-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  db_data:
